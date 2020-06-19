@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0qdepqq" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.7.1">
+  <bpmn:collaboration id="Collaboration_0f9czw9">
+    <bpmn:participant id="Participant_1kahig0" name="reise" processRef="Process_0idp6ve" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_0idp6ve" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Starten">
+      <bpmn:outgoing>Flow_1l7syzp</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1l7syzp" sourceRef="StartEvent_1" targetRef="Activity_1ygtz4w" />
+    <bpmn:sequenceFlow id="Flow_1kdgw4n" sourceRef="Activity_1ygtz4w" targetRef="Activity_03vxqcq" />
+    <bpmn:endEvent id="Event_02jp2rr" name="Enden">
+      <bpmn:incoming>Flow_1er4ho8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1er4ho8" sourceRef="Activity_03vxqcq" targetRef="Event_02jp2rr" />
+    <bpmn:scriptTask id="Activity_1ygtz4w" name="Hotel aufrufen" scriptFormat="groovy">
+      <bpmn:incoming>Flow_1l7syzp</bpmn:incoming>
+      <bpmn:outgoing>Flow_1kdgw4n</bpmn:outgoing>
+      <bpmn:script>import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.google.gson.Gson;
+import java.util.List;
+
+// URL-Objekt mit URL anlegen.
+URL url = new URL("http://implproz.cbu.net:8003/hotels/berlin/rooms");
+
+// Verbindung anlegen
+HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
+// HTTP-Methode "GET" Ruft alle vorhandenen Zimmernummern des Hotels in Berlin ab
+con.setRequestMethod("GET");
+
+// Verbindung aufbauen
+ con.connect();
+
+// JSON-Antwort in einen String auslesen.
+BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+//List &lt;String&gt; jsonstring = new ArrayList&lt;String&gt;();
+ String jsonstring = reader.lines().collect(Collectors.joining("\n"));
+
+// Verbindung schliessen
+reader.close();
+
+String rs = jsonstring.replace("[","");
+String rs1 = rs.replace("]","");
+String Zimmer = rs1.replace("\"", "");
+
+
+// Den ausgelesenen Eintrag als Variable "Zimmer" für den User Task speichern.
+
+execution.setVariable("Zimmer", Zimmer);</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:userTask id="Activity_03vxqcq" name="Zimmer anzeigen">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="Zimmer" label="Zimmer" type="string" defaultValue="${Zimmer}" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1kdgw4n</bpmn:incoming>
+      <bpmn:outgoing>Flow_1er4ho8</bpmn:outgoing>
+    </bpmn:userTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0f9czw9">
+      <bpmndi:BPMNShape id="Participant_1kahig0_di" bpmnElement="Participant_1kahig0" isHorizontal="true">
+        <dc:Bounds x="129" y="120" width="600" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1er4ho8_di" bpmnElement="Flow_1er4ho8">
+        <di:waypoint x="520" y="240" />
+        <di:waypoint x="582" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1kdgw4n_di" bpmnElement="Flow_1kdgw4n">
+        <di:waypoint x="360" y="240" />
+        <di:waypoint x="420" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1l7syzp_di" bpmnElement="Flow_1l7syzp">
+        <di:waypoint x="208" y="240" />
+        <di:waypoint x="260" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="172" y="222" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="172" y="265" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_02jp2rr_di" bpmnElement="Event_02jp2rr">
+        <dc:Bounds x="582" y="222" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="584" y="265" width="32" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_14c57s1_di" bpmnElement="Activity_1ygtz4w">
+        <dc:Bounds x="260" y="200" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0jg6j70_di" bpmnElement="Activity_03vxqcq">
+        <dc:Bounds x="420" y="200" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

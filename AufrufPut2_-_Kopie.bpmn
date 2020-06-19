@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_0cf8rhd" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.7.1">
+  <bpmn:process id="PUTapi" isExecutable="true">
+    <bpmn:startEvent id="Event_1sosd8m" name="Prozess Start">
+      <bpmn:outgoing>Flow_0z1qeep</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:scriptTask id="Activity_17f0d9o" name="Kosten berechnen" scriptFormat="groovy">
+      <bpmn:incoming>Flow_0m2zrge</bpmn:incoming>
+      <bpmn:outgoing>Flow_1vylo5a</bpmn:outgoing>
+      <bpmn:script>String price = execution.getVariable("FormField_price");
+
+double Preis= Double.valueOf(price);
+
+long Aufenthaltsdauer = execution.getVariable("Aufenthaltsdauer");
+
+// Berechnung Gesamtpreis
+
+double Gesamtpreis = Aufenthaltsdauer * Preis;
+
+// Berechnung Steuerschuld
+String Gesamtpreis1 = String.valueOf((long) Math.ceil(Gesamtpreis));
+
+execution.setVariable("Gesamtpreis1", Gesamtpreis1);</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:userTask id="Activity_0hm8a0v" name="Kosten anzeigen">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="FormField_2bsvl80" label="Gesamtpreis anzeigen" type="string" defaultValue="${Gesamtpreis1}" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1vylo5a</bpmn:incoming>
+      <bpmn:outgoing>Flow_177ss97</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Event_1sg0glg" name="Prozess End">
+      <bpmn:incoming>Flow_177ss97</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:scriptTask id="Activity_1seqvau" name="RestWeb Service aufrfen" scriptFormat="groovy">
+      <bpmn:incoming>Flow_0z1qeep</bpmn:incoming>
+      <bpmn:outgoing>Flow_198vyt6</bpmn:outgoing>
+      <bpmn:script>import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.google.gson.Gson;
+
+// URL-Objekt mit URL anlegen.
+URL url = new URL("http://implproz.cbu.net:8003/hotels/berlin/rooms/100");
+
+// Verbindung anlegen
+HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
+// HTTP-Methode "GET" setzen
+con.setRequestMethod("GET");
+
+// Verbindung aufbauen.
+con.connect();
+
+// JSON-Antwort in einen String auslesen.
+BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+String jsonstring = reader.lines().collect(Collectors.joining("\n"));
+
+// Verbindung schliessen
+reader.close();
+
+// Gson-Objekt anlegen
+Gson gson = new Gson();
+
+// JSON-String in eine Java-Map parsen.
+def jsonmap = gson.fromJson(jsonstring, Map.class);
+
+// Den "title"-Eintrag aus dem JSON auslesen.
+String price = jsonmap.get("price");
+
+// Den ausgelesenen Eintrag als Variable "titel" für den User Task speichern.
+execution.setVariable("price", price);</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:userTask id="Activity_0mtdfwi" name="Kosten Anzeigen">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="FormField_price" label="Preis" type="string" defaultValue="${price}" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_198vyt6</bpmn:incoming>
+      <bpmn:outgoing>Flow_1g40f2h</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Activity_0ovqace" name="Aufenthaltsdauer festlegen">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="aufenthaltsdauer" label="Aufenthaltsdauer" type="long" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1g40f2h</bpmn:incoming>
+      <bpmn:outgoing>Flow_0m2zrge</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_0z1qeep" sourceRef="Event_1sosd8m" targetRef="Activity_1seqvau" />
+    <bpmn:sequenceFlow id="Flow_0m2zrge" sourceRef="Activity_0ovqace" targetRef="Activity_17f0d9o" />
+    <bpmn:sequenceFlow id="Flow_1vylo5a" sourceRef="Activity_17f0d9o" targetRef="Activity_0hm8a0v" />
+    <bpmn:sequenceFlow id="Flow_177ss97" sourceRef="Activity_0hm8a0v" targetRef="Event_1sg0glg" />
+    <bpmn:sequenceFlow id="Flow_198vyt6" sourceRef="Activity_1seqvau" targetRef="Activity_0mtdfwi" />
+    <bpmn:sequenceFlow id="Flow_1g40f2h" sourceRef="Activity_0mtdfwi" targetRef="Activity_0ovqace" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="PUTapi">
+      <bpmndi:BPMNEdge id="Flow_0z1qeep_di" bpmnElement="Flow_0z1qeep">
+        <di:waypoint x="208" y="80" />
+        <di:waypoint x="260" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0m2zrge_di" bpmnElement="Flow_0m2zrge">
+        <di:waypoint x="680" y="80" />
+        <di:waypoint x="710" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1vylo5a_di" bpmnElement="Flow_1vylo5a">
+        <di:waypoint x="810" y="80" />
+        <di:waypoint x="840" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_177ss97_di" bpmnElement="Flow_177ss97">
+        <di:waypoint x="940" y="80" />
+        <di:waypoint x="1052" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_198vyt6_di" bpmnElement="Flow_198vyt6">
+        <di:waypoint x="360" y="80" />
+        <di:waypoint x="420" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1g40f2h_di" bpmnElement="Flow_1g40f2h">
+        <di:waypoint x="520" y="80" />
+        <di:waypoint x="580" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_1sosd8m_di" bpmnElement="Event_1sosd8m">
+        <dc:Bounds x="172" y="62" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="157" y="105" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_17f0d9o_di" bpmnElement="Activity_17f0d9o">
+        <dc:Bounds x="710" y="40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0hm8a0v_di" bpmnElement="Activity_0hm8a0v">
+        <dc:Bounds x="840" y="40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1sg0glg_di" bpmnElement="Event_1sg0glg">
+        <dc:Bounds x="1052" y="62" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1039" y="113" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1seqvau_di" bpmnElement="Activity_1seqvau">
+        <dc:Bounds x="260" y="40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0mtdfwi_di" bpmnElement="Activity_0mtdfwi">
+        <dc:Bounds x="420" y="40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0ovqace_di" bpmnElement="Activity_0ovqace">
+        <dc:Bounds x="580" y="40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
